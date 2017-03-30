@@ -1,0 +1,100 @@
+function createReport213(id,w,h,dataNum){
+	var sqlNum = '213' + dataNum;
+	ajaxForData(sqlNum, function(response){
+		var resultArray = Ext.util.JSON.decode(response.responseText);
+		var data= resultArray.ROOT;
+		var tmpData = dataDecode13(data[0]);
+		var factoryName = dataNum === 1?'包缝':'平缝';
+		
+		drawChart(id,w,h,tmpData,factoryName);
+	});
+	function drawChart(id,w,h,data,factoryName){
+		var fontSize1 = (w/100 +10).toString() + 'px';
+		var fontSize2 = (w/100 +5).toString()+ 'px';
+		
+		var chart;
+		chart = new Highcharts.Chart({
+			lang : {
+				drillUpText:'返回'
+			},
+	        chart: {
+	            type: 'column',
+	            renderTo: id,
+	            borderWidth : 2,
+	            height : h,
+	            width : w,
+	            events: {
+	            	drillup: function(e) {
+	                    // 上钻回调事件
+	                    this.setTitle({
+	                    	text: factoryName + '工厂月度各在库时长分布'});
+	                },
+	                drilldown: function (e) {
+	                	this.setTitle({
+	                    	text: e.seriesOptions.name + '在库时长各产品系列数量'});
+	                }
+	            }
+	        },
+	        title: {
+	            text: factoryName + '工厂月度各在库时长分布',
+	            style : {
+	            	fontSize : fontSize1
+	            }
+	        },
+	        xAxis: {
+	            type: 'category',
+	            labels : {
+	            	style : {
+	            		fontSize : fontSize2
+	            	}
+	            }
+	        },
+	        tooltip: {
+		                 headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+		                 pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.0f}台</b><br/>'
+		             },
+	        yAxis: {
+	        	labels : {
+	        		style : {
+	        			fontSize : fontSize2
+	        		}
+	        	},
+	            title: {
+	                text: '成品库存数量（台）',
+	                style : {
+	                	fontSize : fontSize2
+	                }
+	            }
+	        },
+	        legend: {
+	            enabled: false
+	        },
+	        plotOptions: {
+	            series: {
+	                borderWidth: 0,
+	                dataLabels: {
+	                    enabled: true
+	                }
+	            }
+	        },
+	        series: [{
+	        	name : '成品库存数量（台）',
+	        	colorByPoint: true,
+	        	data : data.series[0].data
+	        }],
+	        drilldown: {
+	        	drillUpButton:{
+        		    relativeTo: 'spacingBox',
+        			position : {
+        				y:0,
+        				x:0
+        			},
+        			theme : {
+        				width : 20
+        			}
+        		},
+				series:data.drilldown.series
+	        }
+	    });
+    }
+}
