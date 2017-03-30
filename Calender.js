@@ -6,7 +6,7 @@ var ZxCalender = (function (){
     var _monthName = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
     var _divWidth = 800;
     var _divHeight = 1000;
-    var _paddingTB = 100;
+    var _paddingTB = null;
     var _paddingRL = null;
     var _colSpace = 100;
     var _rowSpace = 100;
@@ -20,22 +20,38 @@ var ZxCalender = (function (){
     var _monthTablePadding = 2;
     var _mdiv = document.getElementById(_renderID);
     
-    function forDiv(id,year){debugger;
+    var _titleFontColor = 'Black';
+    var _titleFontSize = 16;
+    var _titleBgColor = 'White';
+    
+    var _cBgColor = 'White';
+    var _frontColor = 'skyblue';
+    var _MonthNameBgColor = 'White';
+    var _MonthNameFontColor = 'Black';
+    var _MonthTitleBgColor = 'White';
+    var _MonthTitleFontColor = 'Black';
+    
+    function forDiv(id,year,arr){debugger;
         //初始化数据
         _year = year || _year;
         _renderID = id || _renderID;
         doLayout();
         
-        
+        var dayList = decodeDay(arr);
+        var dayList = dayList[_year.toString()];
+                                 
         var mtable = document.createElement('table');
         mtable.setAttribute("cellpadding","0");
         mtable.setAttribute("cellspacing","0");
-        var mtableStyle =(mtable.getAttribute("style")||"")+"height:"+_divHeight+"px;width:"+_divWidth+"px;"+"padding:0px;margin:0px;";
+        var mtableStyle =(mtable.getAttribute("style")||"")+"height:"+_divHeight+"px;width:"+_divWidth+"px;"+"padding:0px;margin:0px;border:2px solid skyblue;";
         mtable.setAttribute("style",mtableStyle);
         var mthead = document.createElement('thead');
         var mtbody = document.createElement('tbody');
-        var mtitle = createFONT(_title,null,20); 
+        var mtitle = createFONT(_title,_titleFontColor,_titleFontSize); 
         var titleTd = createTD(_mTableCol);
+        var titleTdStyle = titleTd.getAttribute("style") || "";
+        titleTdStyle += "height:"+(_titleFontSize+4).toString()+"px;"
+        titleTd.setAttribute("style",titleTdStyle);
         titleTd.appendChild(mtitle);
         mthead.appendChild(titleTd);
         mtable.appendChild(mthead);
@@ -51,12 +67,13 @@ var ZxCalender = (function (){
             
             var rowTable = createTr();
             for(var col= 0; col < _colNumber;col++){
+                var thisMonth = row*_colNumber+col;
                 var padding_left = document.createElement('td');
                 tdStyle = (padding_left.getAttribute("style")||"")+"width:"+_colSpace+"px;";
                 padding_left.setAttribute("style",tdStyle);
                 rowTable.appendChild(padding_left);
                 var monthTD = createTD();
-                monthTD.appendChild(createMonth(row*_colNumber+col));
+                monthTD.appendChild(createMonth(thisMonth,dayList[transNumber(thisMonth+1)]));
                 rowTable.appendChild(monthTD);
             }
             var padding_right = document.createElement('td');
@@ -73,7 +90,29 @@ var ZxCalender = (function (){
         _mdiv.appendChild(mtable);
     }
     
-    function createMonth(month){
+    function decodeDay(arr){
+        if(typeof arr === 'undefined' || !(arr instanceof Array))
+            throw new Error('Parameter Type Error');
+        var te= new RegExp (/[012][0-9]{3}\/[012][0-9]\/[0123][0-9]/);
+        var result={};
+        for(var i=0;i<arr.length;i++){
+            if(!te.test(arr[i])) continue;
+            var d = arr[i].split('/');
+            var tmp=result;
+            for(var j=0;j<d.length;j++){
+                if( tmp[d[j]] ){
+                    tmp= tmp[d[j]];
+                }else{
+                    tmp[d[j]] = {};
+                    tmp= tmp[d[j]];
+                }
+            }
+        }
+        return result;
+    }
+    
+    function createMonth(month,dayList){
+        var thedayList = dayList || {};
         var _month = typeof month === 'undefined'?0 : month;
         //承载月份的表格
         var monthTable = document.createElement('table');
@@ -90,10 +129,10 @@ var ZxCalender = (function (){
         var date = new Date(_year,month,1);
         
         //构建月table对象
-        var titlefont = createFONT(_monthName[month]+'月',null,_fontSize);
+        var titlefont = createFONT(_monthName[month]+'月',_MonthNameFontColor,_fontSize);
         var titletd = createTD(7);
         titletd.appendChild(titlefont);
-        titletd.setAttribute("style","width:100%;text-align:center;");
+        titletd.setAttribute("style","width:100%;text-align:center;background-color:"+_MonthNameBgColor+";");
         var itr = createTr();
         itr.appendChild(titletd);
         monthHead.appendChild(itr);
@@ -105,10 +144,15 @@ var ZxCalender = (function (){
         var monthFlag = _month;
         //记录天再tr中的索引
         var dayOnWeek= 0;
+        var dayOnMonth = 0;
         while(monthFlag === _month){
+            var theday={};
             dayOnWeek = date.getDay();
-            
-            var theday = createDay(date.getDate());
+            dayOnMonth = date.getDate();
+            if(thedayList[transNumber( dayOnMonth)])
+                theday = createDay(dayOnMonth,null,_frontColor);
+            else
+                theday = createDay(dayOnMonth,null,null);
             if(date.getDate() === 1){
                 if(dayOnWeek!=0){
                     var space = createTD(dayOnWeek);
@@ -143,6 +187,7 @@ var ZxCalender = (function (){
     /*doLayout 使用set函数设置样式后 重新计算日历显示参数
     */
     function doLayout(){
+        _mTableCol = _colNumber*2+1;
         _mdiv = document.getElementById(_renderID);
         _mdiv.innerHTML = '';
         var mdivStyle = _mdiv.getAttribute("style")+"overflow:hidden;";
@@ -153,7 +198,7 @@ var ZxCalender = (function (){
         var monthTableMinWidth =Math.round( (_fontSize + 2) * 7 + _monthTablePadding);
         var monthTableMaxWidth =Math.round( (_fontSize * 2) * 7 + _monthTablePadding);
         if(monthTableMinWidth*_colNumber > _divWidth){
-            _colSpace = 0;
+            _colSpace = 1;
             _paddingRL = 2;
             _monthTableWidth = monthTableMinWidth;
         }
@@ -164,34 +209,38 @@ var ZxCalender = (function (){
                 _colSpace =Math.round( ( (_divWidth - monthTableMaxWidth* _colNumber)- _paddingRL*2 ) / (_colNumber - 1) );
             _monthTableWidth = monthTableMaxWidth;
         }else {
-            _colSpace= _paddingRL= Math.round( (_divWidth- monthTableMaxWidth*_colNumber) / (_colNumber+ 1) );
+            _colSpace= _paddingRL= Math.round( (_divWidth- monthTableMaxWidth*_colNumber - (_titleFontSize+4)) / (_colNumber+ 1) );
             _monthTableWidth = monthTableMaxWidth;
         }
-        
         
         _paddingTB =Math.round( _paddingTB || _divHeight * 0.04);
         var monthTableMinHeight =Math.round( (_fontSize + 2) * 7 + _monthTablePadding);
         var monthTableMaxHeight =Math.round( (_fontSize * 2) * 7 + _monthTablePadding);
-        if(monthTableMinHeight*_colNumber > _divHeight){
-            _colSpace = 0;
+        if(monthTableMinHeight*_rowNumber > _divHeight){
+            _rowSpace = 1;
             _paddingTB = 2;
             _monthTableHeight = monthTableMinHeight;
         }
-        else if(monthTableMaxHeight* _colNumber+_paddingTB*2 < _divHeight){
-            if(_colNumber === 1)
-                _colSpace = _paddingTB = Math.round( (_divHeight- monthTableMaxHeight*_colNumber) / (_colNumber+ 1) );
+        else if(monthTableMaxHeight* _rowNumber+_paddingTB*2 < _divHeight){
+            if(_rowNumber === 1)
+                _rowSpace = _paddingTB = Math.round( (_divHeight- monthTableMaxHeight*_rowNumber) / (_rowNumber+ 1) );
             else
-                _colSpace =Math.round( ( (_divHeight - monthTableMaxHeight* _colNumber)- _paddingTB*2 ) / (_colNumber - 1) );
+                _rowSpace =Math.round( ( (_divHeight - monthTableMaxHeight* _rowNumber)- _paddingTB*2 ) / (_rowNumber + 1) );
             _monthTableHeight = monthTableMaxHeight;
         }else {
-            _colSpace= _paddingTB= Math.round( (_divHeight- monthTableMaxHeight*_colNumber) / (_colNumber+ 1) );
+            _rowSpace= _paddingTB= Math.round( (_divHeight- monthTableMaxHeight*_rowNumber) / (_rowNumber+ 1) );
             _monthTableHeight = monthTableMaxHeight;
         }
         
         
         
     }
-    
+    function transNumber(a){
+        if( a/10 <1)
+            return '0'+a.toString();
+        else
+            return a.toString();
+    }
     /*
     
     */
@@ -203,7 +252,7 @@ var ZxCalender = (function (){
     function createWeekTitle(){
         var tr= createTr();
         for(var i=0;i<_weekName.length;i++){
-            var titleday = createDay(_weekName[i]);
+            var titleday = createDay(_weekName[i],_MonthTitleFontColor,_MonthTitleBgColor);
             tr.appendChild(titleday);
         }
         return tr;
@@ -217,7 +266,7 @@ var ZxCalender = (function (){
     */    
     function createDay(day,fontColor,bgColor){
         
-        var thefontColor = fontColor;
+        var thefontColor = fontColor || 'Black';
         var thebgColor =  bgColor || 'White';
         //判断日期 day的 格式是否正确
         // 日历的标题  ‘日’ ‘一’ ‘六’ 等都由此创建
@@ -246,7 +295,7 @@ var ZxCalender = (function (){
         var thefontSize = fonSize || 10 ;
         var font = document.createElement('font');
         var theStyle = font.getAttribute("style") || "";
-        theStyle+= "font-size:"+thefontSize+"px;";
+        theStyle+= "font-size:"+thefontSize+"px;font-family:Microsoft YaHei,Georgia,Serif;";
         font.setAttribute("color",thefontColor);
         font.setAttribute("style",theStyle);
         font.innerHTML = day;
