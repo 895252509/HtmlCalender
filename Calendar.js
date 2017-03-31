@@ -68,6 +68,7 @@ var ZxCalendar = (function (){
             var rowTable = createTr();
             for(var col= 0; col < _colNumber;col++){
                 var thisMonth = row*_colNumber+col;
+                if(thisMonth >11) break;
                 var padding_left = document.createElement('td');
                 tdStyle = (padding_left.getAttribute("style")||"")+"width:"+_colSpace+"px;";
                 padding_left.setAttribute("style",tdStyle);
