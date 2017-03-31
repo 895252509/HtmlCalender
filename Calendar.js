@@ -1,7 +1,7 @@
 
-var ZxCalender = (function (){
+var ZxCalendar = (function (){
     var _year = new Date().getFullYear();
-    var _renderID = 'MyCalender';
+    var _renderID = 'MyCalendar';
     var _weekName= ['日','一','二','三','四','五','六'];
     var _monthName = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
     var _divWidth = 800;
